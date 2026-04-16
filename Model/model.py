@@ -63,14 +63,14 @@ class VIT_Backbone(nn.Module):
                                              hidden_chan_mul = self.Encoding_hidden_chan_mul,
                                              qkv_bias = qkv_bias,
                                              qk_scale = qk_scale,
-                                             acivate_layer = activate_layer,
+                                             activate_layer = activate_layer,
                                              norm_layer = norm_layer)
          for i in range (self.depth)])
 
       self.norm = norm_layer(self.token_len)
       self.head = nn.Linear(self.token_len, preds)
 
-      timm.layers.trunc_normal_(self.cls_token, stf=.02)
+      timm.layers.trunc_normal_(self.cls_token, std=.02)
 
    def forward(self, x):
       B = x.shape[0]
@@ -79,7 +79,7 @@ class VIT_Backbone(nn.Module):
       for blk in self.blocks:
          x = blk(x)
 
-      x.self.norm(x)
+      x = self.norm(x)
       x = self.head(x[:, 0])
       return x
 
@@ -122,13 +122,13 @@ class VIT_Model(nn.Module):
                                    norm_layer)
       self.apply(self.__init__weights)
 
-   def _init__weights(self, w):
+   def __init__weights(self, w):
       if isinstance(w, nn.Linear):
-         timm.layers.trunc_normal_(w.weight, stf=.02)
+         timm.layers.trunc_normal_(w.weight, std=.02)
          if isinstance(w, nn.Linear) and w.bias is not None:
             nn.init.constant_(w.bias, 0)
 
-      elif isinstance(w, nn.LinearNorm):
+      elif isinstance(w, nn.LayerNorm):
          nn.init.constant_(w.weight, 1.0)
          nn.init.constant_(w.bias, 0)
 

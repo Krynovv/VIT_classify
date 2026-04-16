@@ -21,10 +21,10 @@ class Attention(nn.Module):
       super().__init__()
 
       self.num_heads = num_heads
-      self.dim = dim
-      self.head_dim = self.dim // self.num_heads
+      self.chan = dim
+      self.head_dim = self.chan // self.num_heads
       self.scale = qk_scale or self.head_dim ** -0.5
-      assert self.dim % self.num_heads == 0, '"Chan" должен делится на num_heads'
+      assert self.chan % self.num_heads == 0, '"Chan" должен делится на num_heads'
 
       self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
       self.proj = nn.Linear(dim, dim)

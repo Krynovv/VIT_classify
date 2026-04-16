@@ -9,16 +9,19 @@ from Model.model import VIT_Model
 ds = load_dataset("zh-plus/tiny-imagenet")
 
 transform = transforms.Compose([
+   transforms.Lambda(lambda img: img.convert("RGB")),
    transforms.Resize((512,512)),
    transforms.ToTensor(),
 ])
 
 def apply_transforms(batch):
-   batch["pixel_values"] = [transform(img) for img in batch["image"]]
-   return batch
+    batch["image"] = [transform(img) for img in batch["image"]]
+    return batch
+
 
 train_ds = ds["train"].with_transform(apply_transforms)
-val_ds = ds["valid"].with_transform(apply_transforms)
+val_ds   = ds["valid"].with_transform(apply_transforms)
+
 
 train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_ds, batch_size=16)
@@ -53,7 +56,7 @@ for epoch in range(10):
    total_loss = 0
 
    for batch in train_loader:
-      imgs = batch["pixel_values"].to(device)
+      imgs = batch["image"].to(device)
       labels = batch["label"].to(device)
 
       preds = model(imgs)
@@ -78,7 +81,7 @@ for epoch in range(10):
 
    with torch.no_grad():
       for batch in val_loader:
-         imgs = batch["pixel_values"].to(device)
+         imgs = batch["image"].to(device)
          labels = batch["label"].to(device)
 
          preds = model(imgs)
@@ -91,7 +94,7 @@ for epoch in range(10):
          correct_top5 += top5_accuracy(preds, labels)
 
          all_preds.extend(predicted.cpu().numpy())
-         all_preds.extend(labels.cpu().numpy())
+         all_labels.extend(labels.cpu().numpy())
 
          total += labels.size(0)
 
