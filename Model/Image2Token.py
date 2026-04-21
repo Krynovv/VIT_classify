@@ -5,8 +5,8 @@ import math
 
 class Patch_Tokenization(nn.Module):
    def __init__(self,
-                img_size: tuple[int, int, int] = (3, 512, 512),
-                patch_size: int = 64,
+                img_size: tuple[int, int, int] = (3, 64, 64),
+                patch_size: int = 16,
                 token_len: int = 768 # Токен сайз - берется в базовых моделях VIT
                 ): #Ввести параметры
       super().__init__()
@@ -22,12 +22,12 @@ class Patch_Tokenization(nn.Module):
       self.num_tokens = (H / self.patch_size) * (W / self.patch_size)
       patch_dim = C * patch_size * patch_size
 
-      self.split = nn.Unfold(kernel_size=self.patch_size, stride=self.patch_size, padding=0)
+      self.unfold = nn.Unfold(kernel_size=self.patch_size, stride=self.patch_size, padding=0)
       self.project = nn.Linear(patch_dim, token_len)
 
    def forward(self, x):
       B = x.shape[0]
-      x = self.split(x)
+      x = self.unfold(x)
       x = x.transpose(1, 2)
       x = self.project(x)
       return x
