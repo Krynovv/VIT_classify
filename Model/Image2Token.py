@@ -6,7 +6,7 @@ import math
 class Patch_Tokenization(nn.Module):
    def __init__(self,
                 img_size: tuple[int, int, int] = (3, 64, 64),
-                patch_size: int = 16,
+                patch_size: int = 8,
                 token_len: int = 768 # Токен сайз - берется в базовых моделях VIT
                 ): #Ввести параметры
       super().__init__()
@@ -19,7 +19,7 @@ class Patch_Tokenization(nn.Module):
       assert H % patch_size == 0, 'Высота изображения должна делиться нацело на patch_size'
       assert W % patch_size == 0, 'Ширина изображения должна делиться нацело на patch_size'
 
-      self.num_tokens = (H / self.patch_size) * (W / self.patch_size)
+      self.num_tokens = (H // self.patch_size) * (W // self.patch_size)
       patch_dim = C * patch_size * patch_size
 
       self.unfold = nn.Unfold(kernel_size=self.patch_size, stride=self.patch_size, padding=0)
