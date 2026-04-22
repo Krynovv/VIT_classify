@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
    model = VIT_Model(
       img_size=(3, 64, 64),
-      patch_size=16,
+      patch_size=8,
       token_len=768,
       preds=200,
       num_heads=8,
