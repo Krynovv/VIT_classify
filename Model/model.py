@@ -86,8 +86,8 @@ class VIT_Backbone(nn.Module):
 
 class VIT_Model(nn.Module):
    def __init__(self,
-                img_size: tuple[int, int, int]=(3, 512, 512),
-                patch_size: int=64,
+                img_size: tuple[int, int, int]=(3, 64, 64),
+                patch_size: int=8,
                 token_len: int=768,
                 preds: int=1,
                 num_heads: int=1,
