@@ -51,24 +51,13 @@ if __name__ == "__main__":
    criterion = torch.nn.CrossEntropyLoss()
    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
-   
 
-   checkpoint = torch.load('checkpoint_epoch10.pt', map_location=device)
-   model.load_state_dict(checkpoint['model_state_dict'])
-   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-   start_epoch = checkpoint['epoch']  # = 10
 
-   if 'scheduler_state_dict' in checkpoint:
-       scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-       
-   print(f"Loaded checkpoint, continuing from epoch {start_epoch+1}")
-
-   
 #-------------------------------------
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(start_epoch, start_epoch + 30):
+   for epoch in range(30):
       model.train()
       total_loss = 0
 
