@@ -42,7 +42,4 @@ class Attention(nn.Module):
 
       x = self.proj(x)
 
-      v = v.transpose(1, 2).reshape(B, N, self.chan)
-      x = v + x
-
       return x
