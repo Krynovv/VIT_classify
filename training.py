@@ -9,6 +9,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 
 from Model.model import VIT_Model
 
+
 transform = transforms.Compose([
    transforms.Lambda(lambda img: img.convert("RGB")),
    transforms.Resize((64,64)),
@@ -53,12 +54,19 @@ if __name__ == "__main__":
    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
 
+   checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
+   model.load_state_dict(checkpoint['model_state_dict'])
+   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+   if 'scheduler_state_dict' in checkpoint:
+      scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+   start_epoch = checkpoint['epoch']
+   print(f"Продолжаем с эпохи {start_epoch+1}")
 
 #-------------------------------------
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(30):
+   for epoch in range(start_epoch, 30):
       model.train()
       total_loss = 0
 
@@ -132,6 +140,5 @@ if __name__ == "__main__":
           f"checkpoint_epoch{epoch+1}.pt",
           f"/content/drive/MyDrive/checkpoint_epoch{epoch+1}.pt"
       )
-      
       print(f"Checkpoint saved: checkpoint_epoch{epoch+1}.pt", flush=True)
 
