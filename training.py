@@ -1,5 +1,6 @@
 import torch
 import sys
+import shutil
 from tqdm import tqdm
 from datasets import load_dataset
 from torchvision import transforms
@@ -29,8 +30,8 @@ if __name__ == "__main__":
    train_ds = ds["train"].with_transform(apply_transforms)
    val_ds   = ds["valid"].with_transform(apply_transforms)
 
-   train_loader = DataLoader(train_ds, batch_size=16, shuffle=True)
-   val_loader = DataLoader(val_ds, batch_size=16)
+   train_loader = DataLoader(train_ds, batch_size=32,  shuffle=True, num_workers=2, pin_memory=True)
+   val_loader = DataLoader(val_ds, batch_size=32, num_workers=2, pin_memory=True)
 
    model = VIT_Model(
       img_size=(3, 64, 64),
@@ -126,5 +127,11 @@ if __name__ == "__main__":
         'scheduler_state_dict': scheduler.state_dict(),
         'loss': total_loss / len(train_loader),
       }, f"checkpoint_epoch{epoch+1}.pt")
+
+      shutil.copy(
+          f"checkpoint_epoch{epoch+1}.pt",
+          f"/content/drive/MyDrive/checkpoint_epoch{epoch+1}.pt"
+      )
+      
       print(f"Checkpoint saved: checkpoint_epoch{epoch+1}.pt", flush=True)
 
