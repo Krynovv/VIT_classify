@@ -54,7 +54,7 @@ if __name__ == "__main__":
    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
 
-   checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
+   checkpoint = torch.load('checkpoint_epoch20.pt', map_location=device)
    model.load_state_dict(checkpoint['model_state_dict'])
    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
    if 'scheduler_state_dict' in checkpoint:
