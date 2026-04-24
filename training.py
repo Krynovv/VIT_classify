@@ -68,19 +68,19 @@ if __name__ == "__main__":
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
 
    # Для чекпоинтов
-   checkpoint = torch.load('checkpoint_epoch5.pt', map_location=device)
-   model.load_state_dict(checkpoint['model_state_dict'])
-   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-   if 'scheduler_state_dict' in checkpoint:
-      scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-   start_epoch = checkpoint['epoch']
-   print(f"Продолжаем с эпохи {start_epoch+1}")
+   # checkpoint = torch.load('checkpoint_epoch5.pt', map_location=device)
+   # model.load_state_dict(checkpoint['model_state_dict'])
+   # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+   # if 'scheduler_state_dict' in checkpoint:
+   #    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+   # start_epoch = checkpoint['epoch']
+   # print(f"Продолжаем с эпохи {start_epoch+1}")
 
 #-------------------------------------
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(start_epoch, 30):
+   for epoch in range(30):
       model.train()
       total_loss = 0
 
