@@ -68,7 +68,7 @@ if __name__ == "__main__":
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
 
    # Для чекпоинтов
-   checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
+   checkpoint = torch.load('checkpoint_epoch5.pt', map_location=device)
    model.load_state_dict(checkpoint['model_state_dict'])
    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
    if 'scheduler_state_dict' in checkpoint:
