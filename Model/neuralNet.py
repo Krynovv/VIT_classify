@@ -15,7 +15,8 @@ class NeuaralNet(nn.Module):
                 in_chan: int,
                 hidden_chan: NoneFloat=None,
                 out_chan: NoneFloat=None,
-                activate_layer = nn.GELU
+                activate_layer = nn.GELU,
+                drop: float=0.1
                 ):
       super().__init__()
 
@@ -29,10 +30,12 @@ class NeuaralNet(nn.Module):
 
       self.fc1 = nn.Linear(in_chan, hidden_chan)
       self.activate = activate_layer()
+      self.drop = nn.Dropout(drop)
       self.fc2 = nn.Linear(hidden_chan, out_chan)
 
    def forward(self, x):
       x = self.fc1(x)
       x = self.activate(x)
+      x = self.drop(x)
       x = self.fc2(x)
       return x
