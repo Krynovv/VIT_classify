@@ -80,7 +80,7 @@ if __name__ == "__main__":
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(30):
+   for epoch in range(start_epoch, 30):
       model.train()
       total_loss = 0
 
