@@ -10,14 +10,27 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from Model.model import VIT_Model
 
 
-transform = transforms.Compose([
+transform_train = transforms.Compose([
+   transforms.Lambda(lambda img: img.convert("RGB")),
+   transforms.Resize((72, 72)),
+   transforms.RandomHorizontalFlip(),
+   transforms.RandomCrop(64, padding=4),
+   transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+   transforms.ToTensor(),
+])
+
+transform_val = transforms.Compose([
    transforms.Lambda(lambda img: img.convert("RGB")),
    transforms.Resize((64,64)),
    transforms.ToTensor(),
 ])
 
-def apply_transforms(batch):
-    batch["image"] = [transform(img) for img in batch["image"]]
+def apply_transforms_train(batch):
+    batch["image"] = [transform_train(img) for img in batch["image"]]
+    return batch
+
+def apply_transforms_val(batch):
+    batch["image"] = [transform_val(img) for img in batch["image"]]
     return batch
 
 def top5_accuracy(preds, labels):
@@ -28,8 +41,8 @@ def top5_accuracy(preds, labels):
 if __name__ == "__main__":
 
    ds = load_dataset("zh-plus/tiny-imagenet")
-   train_ds = ds["train"].with_transform(apply_transforms)
-   val_ds   = ds["valid"].with_transform(apply_transforms)
+   train_ds = ds["train"].with_transform(apply_transforms_train)
+   val_ds   = ds["valid"].with_transform(apply_transforms_val)
 
    train_loader = DataLoader(train_ds, batch_size=32,  shuffle=True, num_workers=2, pin_memory=True)
    val_loader = DataLoader(val_ds, batch_size=32, num_workers=2, pin_memory=True)
@@ -54,19 +67,20 @@ if __name__ == "__main__":
    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
 
-   checkpoint = torch.load('checkpoint_epoch20.pt', map_location=device)
-   model.load_state_dict(checkpoint['model_state_dict'])
-   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-   if 'scheduler_state_dict' in checkpoint:
-      scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-   start_epoch = checkpoint['epoch']
-   print(f"Продолжаем с эпохи {start_epoch+1}")
+   # Для чекпоинтов
+   # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
+   # model.load_state_dict(checkpoint['model_state_dict'])
+   # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+   # if 'scheduler_state_dict' in checkpoint:
+   #    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+   # start_epoch = checkpoint['epoch']
+   # print(f"Продолжаем с эпохи {start_epoch+1}")
 
 #-------------------------------------
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(start_epoch, 30):
+   for epoch in range(30):
       model.train()
       total_loss = 0
 
