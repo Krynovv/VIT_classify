@@ -44,8 +44,8 @@ if __name__ == "__main__":
    train_ds = ds["train"].with_transform(apply_transforms_train)
    val_ds   = ds["valid"].with_transform(apply_transforms_val)
 
-   train_loader = DataLoader(train_ds, batch_size=32,  shuffle=True, num_workers=2, pin_memory=True)
-   val_loader = DataLoader(val_ds, batch_size=32, num_workers=2, pin_memory=True)
+   train_loader = DataLoader(train_ds, batch_size=64,  shuffle=True, num_workers=2, pin_memory=True)
+   val_loader = DataLoader(val_ds, batch_size=64, num_workers=2, pin_memory=True)
 
    model = VIT_Model(
       img_size=(3, 64, 64),
@@ -64,11 +64,11 @@ if __name__ == "__main__":
 
    # Loss and Optimizer
    criterion = torch.nn.CrossEntropyLoss()
-   optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
-   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
+   optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.05)
+   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 
    # Для чекпоинтов
-   # checkpoint = torch.load('checkpoint_epoch5.pt', map_location=device)
+   # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
    # model.load_state_dict(checkpoint['model_state_dict'])
    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
    # if 'scheduler_state_dict' in checkpoint:
@@ -142,17 +142,23 @@ if __name__ == "__main__":
       print(f"Recall (macro): {recall:.4f}")
       print(f"F1‑score (macro): {f1:.4f}")
 
-      torch.save({
-        'epoch': epoch + 1,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'scheduler_state_dict': scheduler.state_dict(),
-        'loss': total_loss / len(train_loader),
-      }, f"checkpoint_epoch{epoch+1}.pt")
+      checkpoint = {
+         'epoch': epoch + 1,
+         'model_state_dict': model.state_dict(),
+         'optimizer_state_dict': optimizer.state_dict(),
+         'scheduler_state_dict': scheduler.state_dict(),
+         'loss': total_loss / len(train_loader),
+      }
 
-      shutil.copy(
-          f"checkpoint_epoch{epoch+1}.pt",
-          f"/content/drive/MyDrive/checkpoint_epoch{epoch+1}.pt"
+      torch.save(
+         checkpoint,
+         f"/kaggle/working/checkpoint_epoch{epoch+1}.pt"
       )
+
+      torch.save(
+         checkpoint,
+         "/kaggle/working/checkpoint_latest.pt"
+      )
+
       print(f"Checkpoint saved: checkpoint_epoch{epoch+1}.pt", flush=True)
 
