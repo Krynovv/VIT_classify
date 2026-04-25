@@ -18,12 +18,20 @@ transform_train = transforms.Compose([
    transforms.RandomCrop(64, padding=4),
    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
    transforms.ToTensor(),
+   transforms.Normalize(
+      mean=[0.485,0.456,0.406],
+      std=[0.229,0.224,0.225]
+   )
 ])
 
 transform_val = transforms.Compose([
    transforms.Lambda(lambda img: img.convert("RGB")),
    transforms.Resize((64,64)),
    transforms.ToTensor(),
+   transforms.Normalize(
+      mean=[0.485,0.456,0.406],
+      std=[0.229,0.224,0.225]
+   )
 ])
 
 def apply_transforms_train(batch):
@@ -50,7 +58,7 @@ if __name__ == "__main__":
 
    model = VIT_Model(
       img_size=(3, 64, 64),
-      patch_size=8,
+      patch_size=4,
       token_len=768,
       preds=200,
       num_heads=8,
@@ -64,7 +72,7 @@ if __name__ == "__main__":
    print(f"CUDA available: {torch.cuda.is_available()}")
 
    # Loss and Optimizer
-   criterion = torch.nn.CrossEntropyLoss()
+   criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.05)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 
