@@ -21,7 +21,7 @@ class Attention(nn.Module):
 
       super().__init__()
 
-      
+
       self.num_heads = num_heads
       self.chan = dim
       self.head_dim = self.chan // self.num_heads
