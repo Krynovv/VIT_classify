@@ -38,11 +38,11 @@ class Encoding(nn.Module):
 class VIT_Backbone(nn.Module):
    def __init__(self,
                 preds: int=200,
-                token_len: int=768,
+                token_len: int=384,
                 num_tokens: int=500,
                 num_heads: int=1,
                 Encoding_hidden_chan_mul: float=4.,
-                depth: int=12,
+                depth: int=8,
                 qkv_bias=False,
                 qk_scale=None,
                 activate_layer=nn.GELU,
