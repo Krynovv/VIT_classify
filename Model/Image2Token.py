@@ -6,8 +6,8 @@ import math
 class Patch_Tokenization(nn.Module):
    def __init__(self,
                 img_size: tuple[int, int, int] = (3, 64, 64),
-                patch_size: int = 8,
-                token_len: int = 768 # Токен сайз - берется в базовых моделях VIT
+                patch_size: int = 4,
+                token_len: int = 384 # Токен сайз - берется в базовых моделях VIT
                 ): #Ввести параметры
       super().__init__()
 
