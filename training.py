@@ -7,7 +7,7 @@ from datasets import load_dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_score, recall_score, f1_score
-
+from huggingface_hub import upload_file
 from Model.model import VIT_Model
 
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
    checkpoint_dir = "/kaggle/working/checkpoints"
    os.makedirs(checkpoint_dir, exist_ok=True)
    best_f1 = 0.0
-
+   uploaded = False
    # Для чекпоинтов
    # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
    # model.load_state_dict(checkpoint['model_state_dict'])
@@ -186,7 +186,19 @@ if __name__ == "__main__":
          )
 
          print("Best checkpoint updated")
+         
 
+if not uploaded:
+    upload_file(
+        path_or_fileobj=f"{checkpoint_dir}/best_checkpoint.pt",
+        path_in_repo="best_checkpoint.pt",
+        repo_id="Krynovv/vit-tiny-imagenet",
+        repo_type="model",
+        token=os.environ["HF_TOKEN"]
+    )
+
+    uploaded = True
+    print("Uploaded best checkpoint to Hugging Face")
 
 
 
