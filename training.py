@@ -59,11 +59,11 @@ if __name__ == "__main__":
    model = VIT_Model(
       img_size=(3, 64, 64),
       patch_size=4,
-      token_len=768,
+      token_len=384,
       preds=200,
-      num_heads=8,
+      num_heads=6,
       Encoding_hidden_chan_mul=4.,
-      depth=12
+      depth=8
    )
    device = "cuda" if torch.cuda.is_available() else "cpu"
    model = model.to(device)
@@ -188,17 +188,16 @@ if __name__ == "__main__":
          print("Best checkpoint updated")
          
 
-if not uploaded:
-    upload_file(
-        path_or_fileobj=f"{checkpoint_dir}/best_checkpoint.pt",
-        path_in_repo="best_checkpoint.pt",
-        repo_id="Krynovv/vit-tiny-imagenet",
-        repo_type="model",
-        token=os.environ["HF_TOKEN"]
-    )
-
-    uploaded = True
-    print("Uploaded best checkpoint to Hugging Face")
+         if not uploaded:
+            upload_file(
+               path_or_fileobj=f"{checkpoint_dir}/best_checkpoint.pt",
+               path_in_repo="best_checkpoint.pt",
+               repo_id="Krynovv/vit-tiny-imagenet",
+               repo_type="model",
+               token=os.environ["HF_TOKEN"]
+            )
+            uploaded = True
+            print("Uploaded best checkpoint to Hugging Face")
 
 
 
