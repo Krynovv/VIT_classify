@@ -1,6 +1,7 @@
 import torch
 import sys
 import shutil
+import os
 from tqdm import tqdm
 from datasets import load_dataset
 from torchvision import transforms
@@ -67,6 +68,10 @@ if __name__ == "__main__":
    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.05)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 
+   checkpoint_dir = "/kaggle/working/checkpoints"
+   os.makedirs(checkpoint_dir, exist_ok=True)
+   best_f1 = 0.0
+
    # Для чекпоинтов
    # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
    # model.load_state_dict(checkpoint['model_state_dict'])
@@ -93,6 +98,7 @@ if __name__ == "__main__":
          loss = criterion(preds, labels)
 
          loss.backward()
+         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
          optimizer.step()
 
          total_loss += loss.item()
@@ -142,23 +148,38 @@ if __name__ == "__main__":
       print(f"Recall (macro): {recall:.4f}")
       print(f"F1‑score (macro): {f1:.4f}")
 
-      checkpoint = {
-         'epoch': epoch + 1,
-         'model_state_dict': model.state_dict(),
-         'optimizer_state_dict': optimizer.state_dict(),
-         'scheduler_state_dict': scheduler.state_dict(),
-         'loss': total_loss / len(train_loader),
-      }
 
-      torch.save(
-         checkpoint,
-         f"/kaggle/working/checkpoint_epoch{epoch+1}.pt"
-      )
+      # Каждая 3-я эпоха
+      if (epoch + 1) % 3 == 0:
+         torch.save(
+            model.state_dict(),
+            f"{checkpoint_dir}/epoch_{epoch+1}_weights.pt"
+         )
+         print(f"Saved epoch {epoch+1} weights")
 
-      torch.save(
-         checkpoint,
-         "/kaggle/working/checkpoint_latest.pt"
-      )
+      if f1 > best_f1:
+         best_f1 = f1
 
-      print(f"Checkpoint saved: checkpoint_epoch{epoch+1}.pt", flush=True)
+         state = {
+            'epoch': epoch + 1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'loss': total_loss / len(train_loader),
+            'f1': f1,
+         }
+
+         tmp = f"{checkpoint_dir}/tmp.pt"
+
+         torch.save(state, tmp)
+         os.replace(
+            tmp,
+            f"{checkpoint_dir}/best_checkpoint.pt"
+         )
+
+         print("Best checkpoint updated")
+
+
+
+
 
