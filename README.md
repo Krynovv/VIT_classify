@@ -4,6 +4,7 @@
 
 ## Скачать приложение
 🐧 [Linux (x86_64)](https://huggingface.co/Krynovv/vit-tiny-imagenet/resolve/main/vit-classifier-linux.tar.gz)
+🪟 [Windows(x64)](https://huggingface.co/Krynovv/vit-tiny-imagenet/blob/main/interface.zip)
 ### Установка
 #### Linux
 ```bash
