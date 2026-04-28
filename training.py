@@ -7,8 +7,7 @@ from datasets import load_dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_score, recall_score, f1_score
-from huggingface_hub import upload_file
-from kaggle_secrets import UserSecretsClient
+
 from Model.model import VIT_Model
 
 
@@ -73,7 +72,7 @@ if __name__ == "__main__":
    print(f"CUDA available: {torch.cuda.is_available()}")
 
    # Loss and Optimizer
-   criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
+   criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.2)
    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.05)
    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 
@@ -81,9 +80,6 @@ if __name__ == "__main__":
    os.makedirs(checkpoint_dir, exist_ok=True)
    best_f1 = 0.0
 
-   user_secrets = UserSecretsClient()
-   hf_token = user_secrets.get_secret("HF_TOKEN")
-   
    # Для чекпоинтов
    # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
    # model.load_state_dict(checkpoint['model_state_dict'])
@@ -97,7 +93,7 @@ if __name__ == "__main__":
 # Цикл обучения
 #-------------------------------------
 
-   for epoch in range(40):
+   for epoch in range(30):
       model.train()
       total_loss = 0
 
@@ -190,18 +186,3 @@ if __name__ == "__main__":
          )
 
          print("Best checkpoint updated")
-         
-
-         
-         upload_file(
-            path_or_fileobj=f"{checkpoint_dir}/best_checkpoint.pt",
-            path_in_repo="best_checkpoint.pt",
-            repo_id="Krynovv/vit-tiny-imagenet",
-            repo_type="model",
-            token=hf_token
-         )
-         print("Uploaded best checkpoint to Hugging Face")
-
-
-
-
