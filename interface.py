@@ -249,6 +249,8 @@ LABEL_MAP = {
     "n14991210": "orange",
 }
 
+CLASSES = list(LABEL_MAP.keys())
+
 class MainWindow(QMainWindow):
    def __init__(self):
       super().__init__()
