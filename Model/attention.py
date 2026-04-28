@@ -5,8 +5,6 @@
 Решает как патчи связаны
 """
 import typing
-import numpy as np
-import torch
 import torch.nn as nn
 
 NoneFloat = typing.Union[None, float]
@@ -16,7 +14,7 @@ class Attention(nn.Module):
                 dim: int,
                 num_heads: int=1,
                 drop: float=0.1,
-                qkv_bias: bool = False,
+                qkv_bias: bool = True,
                 qk_scale: NoneFloat = None):
 
       super().__init__()
@@ -31,9 +29,10 @@ class Attention(nn.Module):
       self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
       self.proj = nn.Linear(dim, dim)
       self.attn_drop = nn.Dropout(drop)
+      self.proj_drop = nn.Dropout(drop)
 
    def forward(self, x):
-      B, N, C = x.shape
+      B, N, _ = x.shape
       qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
       q, k, v = qkv[0], qkv[1], qkv[2]
 
@@ -44,5 +43,6 @@ class Attention(nn.Module):
       x = (attn @ v).transpose(1, 2).reshape(B, N, self.chan)
 
       x = self.proj(x)
+      x = self.proj_drop(x)
 
       return x
