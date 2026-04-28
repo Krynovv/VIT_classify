@@ -186,3 +186,12 @@ if __name__ == "__main__":
          )
 
          print("Best checkpoint updated")
+
+         upload_file(
+            path_or_fileobj=f"{checkpoint_dir}/best_checkpoint.pt",
+            path_in_repo="best_checkpoint.pt",
+            repo_id="Krynovv/vit-tiny-imagenet",
+            repo_type="model",
+            token=hf_token
+         )
+         print("Uploaded best checkpoint to Hugging Face")
