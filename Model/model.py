@@ -15,8 +15,9 @@ class Encoding(nn.Module):
                 dim: int,
                 num_heads: int=1,
                 hidden_chan_mul: float=4.,
-                qkv_bias: bool=False,
+                qkv_bias: bool=True,
                 qk_scale: NoneFloat=None,
+                drop_path: float=0.,
                 activate_layer=nn.GELU,
                 norm_layer=nn.LayerNorm):
       super().__init__()
@@ -28,23 +29,25 @@ class Encoding(nn.Module):
                                hidden_chan=int(dim*hidden_chan_mul),
                                out_chan=dim,
                                activate_layer=activate_layer)
+      self.drop_path = timm.layers.DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
    def forward(self, x):
-      x = x + self.attn(self.norm1(x))
-      x = x + self.neuralnet(self.norm2(x))
+      x = x + self.drop_path(self.attn(self.norm1(x)))
+      x = x + self.drop_path(self.neuralnet(self.norm2(x)))
       return x
 
 
 class VIT_Backbone(nn.Module):
    def __init__(self,
                 preds: int=200,
-                token_len: int=384,
+                token_len: int=768,
                 num_tokens: int=500,
                 num_heads: int=1,
                 Encoding_hidden_chan_mul: float=4.,
-                depth: int=8,
-                qkv_bias=False,
+                depth: int=12,
+                qkv_bias=True,
                 qk_scale=None,
+                drop_path_rate: float=0.,
                 activate_layer=nn.GELU,
                 norm_layer=nn.LayerNorm):
       super().__init__()
@@ -58,11 +61,14 @@ class VIT_Backbone(nn.Module):
       self.cls_token = nn.Parameter(torch.zeros(1, 1, self.token_len))
       self.pos_embed = nn.Parameter(data=get_sinusoid_encoding(num_tokens=int(self.num_tokens+1), token_len=int(self.token_len)), requires_grad=False)
 
+      dpr = [r.item() for r in torch.linspace(0, drop_path_rate, depth)]
+
       self.blocks = nn.ModuleList([Encoding(dim=self.token_len,
                                              num_heads=self.num_heads,
                                              hidden_chan_mul = self.Encoding_hidden_chan_mul,
                                              qkv_bias = qkv_bias,
                                              qk_scale = qk_scale,
+                                             drop_path = dpr[i],
                                              activate_layer = activate_layer,
                                              norm_layer = norm_layer)
          for i in range (self.depth)])
@@ -93,8 +99,9 @@ class VIT_Model(nn.Module):
                 num_heads: int=1,
                 Encoding_hidden_chan_mul: float=4.,
                 depth: int=8,
-                qkv_bias=False,
+                qkv_bias=True,
                 qk_scale=None,
+                drop_path_rate: float=0.1,
                 activate_layer=nn.GELU,
                 norm_layer=nn.LayerNorm):
       super().__init__()
@@ -118,6 +125,7 @@ class VIT_Model(nn.Module):
                                    self.depth,
                                    qkv_bias,
                                    qk_scale,
+                                   drop_path_rate,
                                    activate_layer,
                                    norm_layer)
       self.apply(self.__init__weights)
