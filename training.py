@@ -6,8 +6,9 @@ from tqdm import tqdm
 from datasets import load_dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
+from huggingface_hub import upload_file
 from sklearn.metrics import precision_score, recall_score, f1_score
-
+from kaggle_secrets import UserSecretsClient
 from Model.model import VIT_Model
 
 
@@ -79,6 +80,9 @@ if __name__ == "__main__":
    checkpoint_dir = "/kaggle/working/checkpoints"
    os.makedirs(checkpoint_dir, exist_ok=True)
    best_f1 = 0.0
+
+   user_secrets = UserSecretsClient()
+   hf_token = user_secrets.get_secret("HF_TOKEN")
 
    # Для чекпоинтов
    # checkpoint = torch.load('checkpoint_epoch15.pt', map_location=device)
@@ -158,7 +162,7 @@ if __name__ == "__main__":
 
 
       # Каждая 3-я эпоха
-      if (epoch + 1) % 3 == 0:
+      if (epoch + 1) % 5 == 0:
          torch.save(
             model.state_dict(),
             f"{checkpoint_dir}/epoch_{epoch+1}_weights.pt"
