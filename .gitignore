@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+vit_env/
+checkpoints/
+build/
+dist/
+*.spec
+*.tar.gz
+*.egg-info/
+.DS_Store

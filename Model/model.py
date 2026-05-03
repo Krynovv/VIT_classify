@@ -58,8 +58,9 @@ class VIT_Backbone(nn.Module):
       self.Encoding_hidden_chan_mul = Encoding_hidden_chan_mul
       self.depth = depth
 
-      self.cls_token = nn.Parameter(torch.zeros(1, 1, self.token_len))
-      self.pos_embed = nn.Parameter(data=get_sinusoid_encoding(num_tokens=int(self.num_tokens+1), token_len=int(self.token_len)), requires_grad=False)
+      self.pos_embed = nn.Parameter(data=get_sinusoid_encoding(num_tokens=int(self.num_tokens), token_len=int(self.token_len)), requires_grad=False)
+
+      dpr = [r.item() for r in torch.linspace(0, drop_path_rate, depth)]
 
       dpr = [r.item() for r in torch.linspace(0, drop_path_rate, depth)]
 
@@ -76,17 +77,13 @@ class VIT_Backbone(nn.Module):
       self.norm = norm_layer(self.token_len)
       self.head = nn.Linear(self.token_len, preds)
 
-      timm.layers.trunc_normal_(self.cls_token, std=.02)
-
    def forward(self, x):
-      B = x.shape[0]
-      x = torch.cat((self.cls_token.expand(B, -1, -1), x), dim=1)
       x = x + self.pos_embed
       for blk in self.blocks:
          x = blk(x)
 
       x = self.norm(x)
-      x = self.head(x[:, 0])
+      x = self.head(x.mean(dim=1))
       return x
 
 
@@ -139,10 +136,6 @@ class VIT_Model(nn.Module):
       elif isinstance(w, nn.LayerNorm):
          nn.init.constant_(w.weight, 1.0)
          nn.init.constant_(w.bias, 0)
-
-   @torch.jit.ignore
-   def no_weight_decay(self):
-      return {'cls_token'}
 
    def forward(self, x):
       x = self.patch_tokens(x)

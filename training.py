@@ -1,7 +1,8 @@
 import torch
-import sys
-import shutil
+import torch.nn.functional as F
 import os
+import random
+import numpy as np
 from tqdm import tqdm
 from datasets import load_dataset
 from torchvision import transforms
@@ -17,21 +18,21 @@ transform_train = transforms.Compose([
    transforms.Resize((72, 72)),
    transforms.RandomHorizontalFlip(),
    transforms.RandomCrop(64, padding=4),
-   transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+   transforms.RandAugment(num_ops=2, magnitude=9),
    transforms.ToTensor(),
    transforms.Normalize(
-      mean=[0.485,0.456,0.406],
-      std=[0.229,0.224,0.225]
+      mean=[0.485, 0.456, 0.406],
+      std=[0.229, 0.224, 0.225]
    )
 ])
 
 transform_val = transforms.Compose([
    transforms.Lambda(lambda img: img.convert("RGB")),
-   transforms.Resize((64,64)),
+   transforms.Resize((64, 64)),
    transforms.ToTensor(),
    transforms.Normalize(
-      mean=[0.485,0.456,0.406],
-      std=[0.229,0.224,0.225]
+      mean=[0.485, 0.456, 0.406],
+      std=[0.229, 0.224, 0.225]
    )
 ])
 
@@ -48,13 +49,37 @@ def top5_accuracy(preds, labels):
    correct = top5.eq(labels.view(-1, 1)).sum().item()
    return correct
 
+def mixup(imgs, labels, num_classes, alpha=0.4):
+   lam = np.random.beta(alpha, alpha)
+   idx = torch.randperm(imgs.size(0), device=imgs.device)
+   mixed_imgs = lam * imgs + (1 - lam) * imgs[idx]
+   labels_a = F.one_hot(labels, num_classes).float()
+   labels_b = F.one_hot(labels[idx], num_classes).float()
+   return mixed_imgs, lam * labels_a + (1 - lam) * labels_b
+
+def cutmix(imgs, labels, num_classes, alpha=1.0):
+   lam = np.random.beta(alpha, alpha)
+   idx = torch.randperm(imgs.size(0), device=imgs.device)
+   B, C, H, W = imgs.shape
+   cut_ratio = np.sqrt(1 - lam)
+   cut_h, cut_w = int(H * cut_ratio), int(W * cut_ratio)
+   cx, cy = np.random.randint(W), np.random.randint(H)
+   x1, x2 = max(cx - cut_w // 2, 0), min(cx + cut_w // 2, W)
+   y1, y2 = max(cy - cut_h // 2, 0), min(cy + cut_h // 2, H)
+   mixed_imgs = imgs.clone()
+   mixed_imgs[:, :, y1:y2, x1:x2] = imgs[idx, :, y1:y2, x1:x2]
+   lam = 1 - (x2 - x1) * (y2 - y1) / (H * W)
+   labels_a = F.one_hot(labels, num_classes).float()
+   labels_b = F.one_hot(labels[idx], num_classes).float()
+   return mixed_imgs, lam * labels_a + (1 - lam) * labels_b
+
 if __name__ == "__main__":
 
    ds = load_dataset("zh-plus/tiny-imagenet")
    train_ds = ds["train"].with_transform(apply_transforms_train)
    val_ds   = ds["valid"].with_transform(apply_transforms_val)
 
-   train_loader = DataLoader(train_ds, batch_size=64,  shuffle=True, num_workers=2, pin_memory=True)
+   train_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=2, pin_memory=True)
    val_loader = DataLoader(val_ds, batch_size=64, num_workers=2, pin_memory=True)
 
    model = VIT_Model(
@@ -64,7 +89,7 @@ if __name__ == "__main__":
       preds=200,
       num_heads=6,
       Encoding_hidden_chan_mul=4.,
-      depth=8
+      depth=6
    )
    device = "cuda" if torch.cuda.is_available() else "cpu"
    model = model.to(device)
@@ -72,10 +97,16 @@ if __name__ == "__main__":
    print(f"Device: {device}")
    print(f"CUDA available: {torch.cuda.is_available()}")
 
-   # Loss and Optimizer
-   criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.2)
+   criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.05)
-   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
+
+   warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+      optimizer, start_factor=0.01, end_factor=1.0, total_iters=5
+   )
+   cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=45)
+   scheduler = torch.optim.lr_scheduler.SequentialLR(
+      optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[5]
+   )
 
    checkpoint_dir = "/kaggle/working/checkpoints"
    os.makedirs(checkpoint_dir, exist_ok=True)
@@ -105,9 +136,14 @@ if __name__ == "__main__":
          imgs = batch["image"].to(device)
          labels = batch["label"].to(device)
 
+         if random.random() < 0.5:
+            imgs, mixed_labels = cutmix(imgs, labels, num_classes=200)
+         else:
+            imgs, mixed_labels = mixup(imgs, labels, num_classes=200)
+
          optimizer.zero_grad()
          preds = model(imgs)
-         loss = criterion(preds, labels)
+         loss = criterion(preds, mixed_labels)
 
          loss.backward()
          torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -133,11 +169,8 @@ if __name__ == "__main__":
 
             preds = model(imgs)
 
-            #top 1
             predicted = preds.argmax(dim=1)
             correct_top1 += (predicted == labels).sum().item()
-
-            #top 5
             correct_top5 += top5_accuracy(preds, labels)
 
             all_preds.extend(predicted.cpu().numpy())
@@ -147,7 +180,6 @@ if __name__ == "__main__":
 
       acc_top1 = correct_top1 / total
       acc_top5 = correct_top5 / total
-
 
       precision = precision_score(all_labels, all_preds, average="macro", zero_division=0)
       recall = recall_score(all_labels, all_preds, average="macro", zero_division=0)
@@ -160,8 +192,6 @@ if __name__ == "__main__":
       print(f"Recall (macro): {recall:.4f}")
       print(f"F1‑score (macro): {f1:.4f}")
 
-
-      # Каждая 3-я эпоха
       if (epoch + 1) % 5 == 0:
          torch.save(
             model.state_dict(),
@@ -182,12 +212,8 @@ if __name__ == "__main__":
          }
 
          tmp = f"{checkpoint_dir}/tmp.pt"
-
          torch.save(state, tmp)
-         os.replace(
-            tmp,
-            f"{checkpoint_dir}/best_checkpoint.pt"
-         )
+         os.replace(tmp, f"{checkpoint_dir}/best_checkpoint.pt")
 
          print("Best checkpoint updated")
 

@@ -4,8 +4,6 @@
 позволяет учить более сложные зависимости
 """
 import typing
-import numpy as np
-import torch
 import torch.nn as nn
 
 NoneFloat = typing.Union[None, float]
