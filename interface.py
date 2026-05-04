@@ -15,7 +15,7 @@ model = VIT_Model(
    preds=200,
    num_heads=6,
    Encoding_hidden_chan_mul=4.,
-   depth=8
+   depth=6
 )
 
 def resource_path(relative_path):
@@ -28,8 +28,9 @@ def resource_path(relative_path):
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 checkpoint = torch.load(
-    resource_path('checkpoints/best_checkpoint.pt'),
-    map_location=device
+    resource_path('checkpoints/best_checkpoint_new.pt'),
+    map_location=device,
+    weights_only=True
 )
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
